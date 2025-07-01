@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confronto de Speds</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap">
+    <style>
+        :root {
+            --app-background: #fbfbfd;
+            --container-background: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-color: #0066cc;
+            --border-color: #e6e6e6;
+            --highlight: #fbf1d9;
+            --error: #ff3b30;
+            --success: #34c759;
+            --radius-small: 8px;
+            --radius-large: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.0);
+            --missing-color: #ff3b30; /* Vermelho para notas que faltam */
+            --small-diff-color: #ffcc00; /* Amarelo para diferenças pequenas */
+            --large-diff-color: #ff9500; /* Laranja para diferenças grandes */
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--app-background);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-weight: 400;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        .app-title {
+            font-size: 40px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .file-upload-section {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+        .file-container {
+            position: relative;
+            width: 240px;
+        }
+        .file-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 64px;
+            background-color: var(--container-background);
+            border-radius: var(--radius-small);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+        }
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .file-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: var(--radius-small);
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            outline: none;
+            letter-spacing: -0.01em;
+        }
+        .button-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .button-primary:hover {
+            background-color: #0077ed;
+            transform: translateY(-1px);
+        }
+        .button-secondary {
+            background-color: #e8e8ed;
+            color: var(--text-primary);
+        }
+        .button-secondary:hover {
+            background-color: #d9d9df;
+            transform: translateY(-1px);
+        }
+        .button-success {
+            background-color: var(--success);
+            color: white;
+        }
+        .button-success:hover {
+            background-color: #30bb51;
+            transform: translateY(-1px);
+        }
+        .button-active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .filter-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-right: 8px;
+            align-self: center;
+        }
+        .button-filter {
+            background-color: #f5f5f7;
+            color: var(--text-primary);
+            border: none;
+            font-size: 14px;
+            padding: 10px 16px;
+            border-radius: var(--radius-small);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .button-filter:hover {
+            background-color: #e8e8ed;
+            transform: translateY(-1px);
+        }
+        .button-missing {
+            border-left: 4px solid var(--missing-color);
+        }
+        .button-small-diff {
+            border-left: 4px solid var(--small-diff-color);
+        }
+        .button-large-diff {
+            border-left: 4px solid var(--large-diff-color);
+        }
+        .series-filter {
+            display: none;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .series-dropdown {
+            padding: 10px 16px;
+            font-size: 14px;
+            border-radius: var(--radius-small);
+            border: 1px solid var(--border-color);
+            background-color: var(--container-background);
+            box-shadow: var(--shadow);
+            outline: none;
+        }
+        .series-dropdown:focus {
+            border-color: var(--accent-color);
+        }
+        .tables-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .table-section {
+            background-color: var(--container-background);
+            border-radius: var(--radius-large);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .table-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+        }
+        .table-header {
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            text-align: center;
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .table-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 0 0 1px 0;
+            scrollbar-width: thin;
+        }
+        .table-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 10px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #b1b1b6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th {
+            background-color: #f5f5f7;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 14px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        td {
+            padding: 14px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .different {
+            background-color: var(--highlight);
+        }
+        .missing {
+            background-color: var(--missing-color);
+            color: white;
+        }
+        .small-diff {
+            background-color: var(--small-diff-color);
+        }
+        .large-diff {
+            background-color: var(--large-diff-color);
+        }
+        .differences-panel {
+            background-color: var(--container-background);
+            border-radius: var(--radius-large);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .differences-title {
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .differences-title::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--error);
+            margin-right: 8px;
+        }
+        #differences {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            padding: 8px 0;
+        }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 102, 204, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .empty-state-text {
+            font-size: 16px;
+            max-width: 240px;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+        
+        /* Notificação estilo Apple */
+        .apple-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 16px;
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            min-width: 280px;
+            max-width: 500px;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.0);
+        }
+        
+        .apple-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .apple-notification-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        
+        .apple-notification-content {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 15px;
+            line-height: 1.4;
+            color: var(--text-primary);
+        }
+        
+        .apple-notification-error .apple-notification-icon {
+            color: var(--error);
+        }
+        
+        .apple-notification-success .apple-notification-icon {
+            color: var(--success);
+        }
+        
+        .apple-notification-info .apple-notification-icon {
+            color: var(--accent-color);
+        }
+        
+        @media (max-width: 768px) {
+            .app-title {
+                font-size: 28px;
+            }
+            .file-upload-section {
+                flex-direction: column;
+                align-items: center;
+            }
+            .button-group {
+                flex-wrap: wrap;
+            }
+            .tables-container {
+                grid-template-columns: 1fr;
+            }
+            .legend {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+        footer {
+            background-color: #f8f9fa;
+            color: #979a9e;
+            font-size: 12px;
+            padding: 12px 20px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            margin-top: 32px;
+            border-radius: 0 0 var(--radius-large) var(--radius-large);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1 class="app-title">Confronto de Speds</h1>
+        <div class="file-upload-section">
+            <div class="file-container">
+                <label class="file-label">
+                    <span class="file-name">DOMÍNIO</span>
+                    <span class="file-desc">Selecione o arquivo</span>
+                    <input type="file" id="domainFile" accept=".txt" class="file-input">
+                </label>
+            </div>
+            <div class="file-container">
+                <label class="file-label">
+                    <span class="file-name">CLIENTE</span>
+                    <span class="file-desc">Selecione o arquivo</span>
+                    <input type="file" id="clientFile" accept=".txt" class="file-input">
+                </label>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--missing-color);"></div>
+                <span>Nota faltando em um arquivo</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--small-diff-color);"></div>
+                <span>Diferença de 0,01 a 0,10 centavos</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--large-diff-color);"></div>
+                <span>Diferença maior que 0,10 centavos</span>
+            </div>
+        </div>
+        <div class="button-group">
+            <button onclick="loadDataByType('0')" class="button button-secondary">Entradas</button>
+            <button onclick="loadDataByType('55')" class="button button-secondary">NF-e (55)</button>
+            <button onclick="loadDataByType('65')" class="button button-secondary">NFC-e (65)</button>
+            <button onclick="filterDifferences('all')" class="button button-primary">Mostrar Diferenças</button>
+            <button onclick="exportToExcel()" class="button button-success">Exportar Excel</button>
+        </div>
+        <div class="button-group">
+            <span class="filter-label">Filtrar por:</span>
+            <button onclick="filterDifferences('missing')" class="button button-filter button-missing">Notas Faltando</button>
+            <button onclick="filterDifferences('small-diff')" class="button button-filter button-small-diff">Dif. 0,01-0,10</button>
+            <button onclick="filterDifferences('large-diff')" class="button button-filter button-large-diff">Dif. > 0,10</button>
+            <button onclick="clearFilters()" class="button button-filter">Limpar Filtros</button>
+        </div>
+        <div id="seriesFilterContainer" class="series-filter">
+            <select id="seriesFilter" class="series-dropdown" onchange="filterBySeries()">
+                <option value="all">Todas as Séries</option>
+                <!-- Séries serão adicionadas dinamicamente -->
+            </select>
+        </div>
+        <div class="tables-container">
+            <div class="table-section">
+                <div class="table-header">DOMÍNIO</div>
+                <div class="table-wrapper">
+                    <table id="domainTable">
+                        <thead>
+                            <tr>
+                                <th>NOTA</th>
+                                <th>TOTAL</th>
+                                <th>BASE DE CALC.</th>
+                                <th>ICMS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="table-section">
+                <div class="table-header">CLIENTE</div>
+                <div class="table-wrapper">
+                    <table id="clientTable">
+                        <thead>
+                            <tr>
+                                <th>NOTA</th>
+                                <th>TOTAL</th>
+                                <th>BASE DE CALC.</th>
+                                <th>ICMS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="differences-panel">
+            <div class="differences-title">NOTAS COM DIFERENÇAS</div>
+            <div id="differences">Selecione os arquivos e execute uma análise para ver as diferenças</div>
+        </div>
+        <footer class="footer">©2025. Versão teste 0.1 atualização n.2 - Atualizado em 01 de jul. de 2025 - Marcos Contabilidade LTDA. Desenvolvido por Arlan Arnor.</footer>
+    </div>
+    <script>
+        let currentFilter = null;
+        let fullDomainData = [];
+        let fullClientData = [];
+        
+        // Atualize mensagens nos seletores de arquivo
+        document.getElementById('domainFile').addEventListener('change', function(e) {
+            updateFileLabel(this, 'DOMÍNIO');
+        });
+        document.getElementById('clientFile').addEventListener('change', function(e) {
+            updateFileLabel(this, 'CLIENTE');
+        });
+        
+        function updateFileLabel(input, defaultText) {
+            const label = input.parentElement;
+            const nameElement = label.querySelector('.file-name');
+            const descElement = label.querySelector('.file-desc');
+            if (input.files.length > 0) {
+                nameElement.textContent = defaultText;
+                descElement.textContent = input.files[0].name;
+            } else {
+                nameElement.textContent = defaultText;
+                descElement.textContent = 'Selecione o arquivo';
+            }
+        }
+        
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Processando dados...</div>
+                </div>
+            `;
+            document.body.appendChild(loading);
+        }
+        
+        function hideLoading() {
+            const loading = document.querySelector('.loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+        
+        // Sistema de Notificação estilo Apple
+        function showNotification(message, type = 'info', duration = 3000) {
+            // Remover notificações anteriores
+            const existingNotifications = document.querySelectorAll('.apple-notification');
+            existingNotifications.forEach(n => n.remove());
+            
+            // Criar nova notificação
+            const notification = document.createElement('div');
+            notification.className = `apple-notification apple-notification-${type}`;
+            
+            // Adicionar ícone baseado no tipo
+            let icon = '';
+            if (type === 'info') icon = '&#9432;'; // Info icon
+            else if (type === 'error') icon = '&#10060;'; // Error icon
+            else if (type === 'success') icon = '&#10004;'; // Success icon
+            
+            notification.innerHTML = `
+                <div class="apple-notification-icon">${icon}</div>
+                <div class="apple-notification-content">${message}</div>
+            `;
+            
+            // Adicionar ao DOM
+            document.body.appendChild(notification);
+            
+            // Animar entrada
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // Animar saída após duração
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300); // Tempo da transição
+            }, duration);
+        }
+        
+        async function parseSpedFile(file, filter) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const lines = e.target.result.split('\n');
+                    const data = [];
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i];
+                        if (!line.startsWith('|C100|')) continue;
+                        
+                        const parts = line.split('|');
+                        if (filter === '0' && parts[2] === '0') {
+                            // Filtro para Entradas (operação = 0)
+                            data.push({
+                                nota: parts[8],
+                                total: parts[16],
+                                baseCalc: parts[21],
+                                icms: parts[22]
+                            });
+                        } else if (filter === '55' && parts[5] === '55') {
+                            // Filtro para NF-e (modelo = 55), qualquer operação
+                            data.push({
+                                nota: parts[8],
+                                total: parts[16],
+                                baseCalc: parts[21],
+                                icms: parts[22]
+                            });
+                        } else if (filter === '65' && parts[5] === '65') {
+                            // Filtro para NFC-e (modelo = 65), qualquer operação
+                            data.push({
+                                nota: parts[8],
+                                total: parts[16],
+                                baseCalc: parts[21],
+                                icms: parts[22],
+                                serie: parts[7] // Extraindo a série (posição 7) para as NFC-e
+                            });
+                        }
+                    }
+                    
+                    data.sort((a, b) => a.nota.localeCompare(b.nota));
+                    resolve(data);
+                };
+                
+                reader.readAsText(file);
+            });
+        }
+        
+        async function loadDataByType(filterType) {
+            const domainFile = document.getElementById('domainFile').files[0];
+            const clientFile = document.getElementById('clientFile').files[0];
+            
+            if (!domainFile || !clientFile) {
+                showNotification('Por favor, selecione ambos os arquivos antes de continuar.', 'error');
+                return;
+            }
+            
+            // Destacar o botão ativo
+            document.querySelectorAll('.button-secondary').forEach(btn => {
+                btn.classList.remove('button-active');
+            });
+            document.querySelector(`button[onclick="loadDataByType('${filterType}')"]`).classList.add('button-active');
+            
+            // Limpar completamente os dados anteriores para evitar mistura
+            fullDomainData = [];
+            fullClientData = [];
+            
+            // Limpar as tabelas
+            document.querySelector('#domainTable tbody').innerHTML = '';
+            document.querySelector('#clientTable tbody').innerHTML = '';
+            
+            currentFilter = filterType;
+            showLoading();
+            
+            try {
+                // Ocultar o seletor de séries por padrão
+                document.getElementById('seriesFilterContainer').style.display = 'none';
+                
+                const [domainData, clientData] = await Promise.all([
+                    parseSpedFile(domainFile, filterType),
+                    parseSpedFile(clientFile, filterType)
+                ]);
+                
+                // Guardar dados completos para filtragem posterior
+                fullDomainData = domainData;
+                fullClientData = clientData;
+                
+                // Se for NFC-e (65), configurar o filtro de séries
+                if (filterType === '65') {
+                    setupSeriesFilter(domainData, clientData);
+                }
+                
+                updateTables(domainData, clientData);
+            } catch (error) {
+                console.error('Erro ao processar arquivos:', error);
+                showNotification('Erro ao processar os arquivos', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function setupSeriesFilter(domainData, clientData) {
+            const seriesSet = new Set();
+            
+            // Coletar todas as séries únicas
+            domainData.forEach(item => {
+                if (item.serie) seriesSet.add(item.serie);
+            });
+            
+            clientData.forEach(item => {
+                if (item.serie) seriesSet.add(item.serie);
+            });
+            
+            // Ordenar as séries
+            const series = Array.from(seriesSet).sort();
+            
+            // Limpar e preencher o dropdown de séries
+            const seriesDropdown = document.getElementById('seriesFilter');
+            seriesDropdown.innerHTML = '<option value="all">Todas as Séries</option>';
+            
+            series.forEach(serie => {
+                const option = document.createElement('option');
+                option.value = serie;
+                option.textContent = `Série ${serie}`;
+                seriesDropdown.appendChild(option);
+            });
+            
+            // Mostrar o seletor de séries
+            if (series.length > 0) {
+                document.getElementById('seriesFilterContainer').style.display = 'flex';
+            }
+        }
+        
+        function filterBySeries() {
+            const selectedSerie = document.getElementById('seriesFilter').value;
+            
+            if (selectedSerie === 'all') {
+                // Mostrar todas as séries
+                updateTables(fullDomainData, fullClientData);
+            } else {
+                // Filtrar por série selecionada
+                const filteredDomainData = fullDomainData.filter(item => item.serie === selectedSerie);
+                const filteredClientData = fullClientData.filter(item => item.serie === selectedSerie);
+                
+                updateTables(filteredDomainData, filteredClientData);
+            }
+        }
+        
+        function normalizeNumber(value) {
+            // Remove trailing zeros and convert to a number
+            return parseFloat(value.replace(',', '.'));
+        }
+        
+        function formatCurrency(value) {
+            // Format as currency
+            const num = parseFloat(value.replace(',', '.'));
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+        
+        function getComparisonClass(val1, val2) {
+            if (!val1 || !val2) return 'missing';
+            
+            const num1 = normalizeNumber(val1);
+            const num2 = normalizeNumber(val2);
+            const diff = Math.abs(num1 - num2);
+            
+            if (diff > 0 && diff <= 0.10) {
+                return 'small-diff';
+            } else if (diff > 0.10) {
+                return 'large-diff';
+            }
+            return '';
+        }
+        
+        function updateTables(domainData, clientData) {
+            const domainTbody = document.querySelector('#domainTable tbody');
+            const clientTbody = document.querySelector('#clientTable tbody');
+            
+            // Limpar as tabelas
+            domainTbody.innerHTML = '';
+            clientTbody.innerHTML = '';
+            
+            if (!domainData.length && !clientData.length) {
+                document.getElementById('differences').textContent = 'Nenhum dado encontrado para o filtro selecionado';
+                return;
+            }
+            
+            // Processar em lotes para evitar travamento com grande volume de dados
+            const batchSize = 100;
+            const allNotes = new Set([
+                ...domainData.map(d => d.nota),
+                ...clientData.map(c => c.nota)
+            ]);
+            
+            const differences = new Set();
+            const allNotesArray = Array.from(allNotes);
+            
+            // Função para processar um lote de notas
+            function processBatch(startIndex) {
+                const endIndex = Math.min(startIndex + batchSize, allNotesArray.length);
+                const fragment1 = document.createDocumentFragment();
+                const fragment2 = document.createDocumentFragment();
+                
+                for (let i = startIndex; i < endIndex; i++) {
+                    const nota = allNotesArray[i];
+                    const domainRow = domainData.find(d => d.nota === nota);
+                    const clientRow = clientData.find(c => c.nota === nota);
+                    let hasDifference = false;
+                    
+                    // Domain row
+                    const dRow = document.createElement('tr');
+                    if (domainRow) {
+                        let cell = document.createElement('td');
+                        cell.textContent = domainRow.nota;
+                        dRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = formatCurrency(domainRow.total);
+                        dRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = formatCurrency(domainRow.baseCalc);
+                        dRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = formatCurrency(domainRow.icms);
+                        dRow.appendChild(cell);
+                    } else {
+                        // Nota faltando no domínio
+                        let cell = document.createElement('td');
+                        cell.textContent = nota;
+                        cell.classList.add('missing');
+                        dRow.appendChild(cell);
+                        
+                        for (let j = 0; j < 3; j++) {
+                            cell = document.createElement('td');
+                            cell.classList.add('missing');
+                            dRow.appendChild(cell);
+                        }
+                        hasDifference = true;
+                    }
+                    
+                    // Client row
+                    const cRow = document.createElement('tr');
+                    if (clientRow) {
+                        let cell = document.createElement('td');
+                        cell.textContent = clientRow.nota;
+                        cRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = formatCurrency(clientRow.total);
+                        cRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = formatCurrency(clientRow.baseCalc);
+                        cRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = formatCurrency(clientRow.icms);
+                        cRow.appendChild(cell);
+                    } else {
+                        // Nota faltando no cliente
+                        let cell = document.createElement('td');
+                        cell.textContent = nota;
+                        cell.classList.add('missing');
+                        cRow.appendChild(cell);
+                        
+                        for (let j = 0; j < 3; j++) {
+                            cell = document.createElement('td');
+                            cell.classList.add('missing');
+                            cRow.appendChild(cell);
+                        }
+                        hasDifference = true;
+                    }
+                    
+                    // Check for differences with new highlighting rules
+                    if (domainRow && clientRow) {
+                        const fields = ['total', 'baseCalc', 'icms'];
+                        fields.forEach((field, index) => {
+                            const domainValue = domainRow[field];
+                            const clientValue = clientRow[field];
+                            
+                            if (normalizeNumber(domainValue) !== normalizeNumber(clientValue)) {
+                                const compareClass = getComparisonClass(domainValue, clientValue);
+                                
+                                dRow.cells[index + 1].classList.add(compareClass);
+                                cRow.cells[index + 1].classList.add(compareClass);
+                                
+                                hasDifference = true;
+                            }
+                        });
+                    }
+                    
+                    if (hasDifference) {
+                        differences.add(nota);
+                    }
+                    
+                    fragment1.appendChild(dRow);
+                    fragment2.appendChild(cRow);
+                }
+                
+                domainTbody.appendChild(fragment1);
+                clientTbody.appendChild(fragment2);
+                
+                // Se houver mais notas para processar, agende o próximo lote
+                if (endIndex < allNotesArray.length) {
+                    setTimeout(() => processBatch(endIndex), 0);
+                } else {
+                    // Todos os lotes foram processados, atualizar o resumo de diferenças
+                    if (differences.size > 0) {
+                        document.getElementById('differences').textContent = Array.from(differences).sort().join(', ');
+                    } else {
+                        document.getElementById('differences').textContent = 'Nenhuma diferença encontrada';
+                    }
+                }
+            }
+            
+            // Iniciar o processamento em lotes
+            processBatch(0);
+        }
+        
+        function filterDifferences(filterType = 'all') {
+            const domainRows = document.querySelectorAll('#domainTable tbody tr');
+            const clientRows = document.querySelectorAll('#clientTable tbody tr');
+            let anyDifferences = false;
+            
+            for (let i = 0; i < domainRows.length; i++) {
+                const dRow = domainRows[i];
+                const cRow = clientRows[i];
+                
+                let showRow = false;
+                
+                if (filterType === 'all') {
+                    // Mostrar qualquer diferença (comportamento original)
+                    showRow = [...dRow.cells].some(cell => 
+                        cell.classList.contains('missing') || 
+                        cell.classList.contains('small-diff') || 
+                        cell.classList.contains('large-diff')
+                    ) || 
+                    [...cRow.cells].some(cell => 
+                        cell.classList.contains('missing') || 
+                        cell.classList.contains('small-diff') || 
+                        cell.classList.contains('large-diff')
+                    );
+                } 
+                else if (filterType === 'missing') {
+                    // Mostrar apenas notas faltando
+                    showRow = [...dRow.cells].some(cell => cell.classList.contains('missing')) || 
+                             [...cRow.cells].some(cell => cell.classList.contains('missing'));
+                }
+                else if (filterType === 'small-diff') {
+                    // Mostrar apenas diferenças pequenas
+                    showRow = [...dRow.cells].some(cell => cell.classList.contains('small-diff')) || 
+                             [...cRow.cells].some(cell => cell.classList.contains('small-diff'));
+                }
+                else if (filterType === 'large-diff') {
+                    // Mostrar apenas diferenças grandes
+                    showRow = [...dRow.cells].some(cell => cell.classList.contains('large-diff')) || 
+                             [...cRow.cells].some(cell => cell.classList.contains('large-diff'));
+                }
+                
+                dRow.style.display = showRow ? '' : 'none';
+                cRow.style.display = showRow ? '' : 'none';
+                
+                if (showRow) {
+                    anyDifferences = true;
+                }
+            }
+            
+            if (!anyDifferences) {
+                showNotification(`Não foram encontradas diferenças para esse filtro.`, 'info');
+            }
+        }
+        
+        function clearFilters() {
+            const domainRows = document.querySelectorAll('#domainTable tbody tr');
+            const clientRows = document.querySelectorAll('#clientTable tbody tr');
+            
+            for (let i = 0; i < domainRows.length; i++) {
+                domainRows[i].style.display = '';
+                clientRows[i].style.display = '';
+            }
+            
+            showNotification('Filtros removidos', 'success');
+        }
+        
+        function exportToExcel() {
+            const domainTable = document.getElementById('domainTable');
+            const clientTable = document.getElementById('clientTable');
+            
+            if (domainTable.rows.length <= 1 && clientTable.rows.length <= 1) {
+                showNotification('Não há dados para exportar. Por favor, carregue os dados primeiro.', 'error');
+                return;
+            }
+            
+            let csv = 'DOMÍNIO\n';
+            csv += tableToCSV(domainTable);
+            csv += '\nCLIENTE\n';
+            csv += tableToCSV(clientTable);
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'confronto_speds.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        function tableToCSV(table) {
+            const rows = table.querySelectorAll('tr');
+            return Array.from(rows)
+                .map(row => {
+                    return Array.from(row.cells)
+                        .map(cell => `"${cell.textContent}"`)
+                        .join(',');
+                })
+                .join('\n');
+        }
+    </script>
+</body>
+</html>
