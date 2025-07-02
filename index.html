@@ -274,6 +274,33 @@
         .large-diff {
             background-color: var(--large-diff-color);
         }
+        
+        /* Estilos para a coluna CHAVE */
+        .chave-cell {
+            position: relative;
+            text-indent: -9999px;
+            white-space: nowrap;
+            width: 60px;
+            text-align: center;
+        }
+        
+        .chave-cell .copy-icon {
+            text-indent: 0;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--accent-color);
+            transition: var(--transition);
+        }
+        
+        .chave-cell .copy-icon:hover {
+            color: #0077ed;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
         .differences-panel {
             background-color: var(--container-background);
             border-radius: var(--radius-large);
@@ -522,6 +549,7 @@
                     <table id="domainTable">
                         <thead>
                             <tr>
+                                <th>CHAVE</th>
                                 <th>NOTA</th>
                                 <th>TOTAL</th>
                                 <th>BASE DE CALC.</th>
@@ -540,6 +568,7 @@
                     <table id="clientTable">
                         <thead>
                             <tr>
+                                <th>CHAVE</th>
                                 <th>NOTA</th>
                                 <th>TOTAL</th>
                                 <th>BASE DE CALC.</th>
@@ -557,7 +586,7 @@
             <div class="differences-title">NOTAS COM DIFERENÇAS</div>
             <div id="differences">Selecione os arquivos e execute uma análise para ver as diferenças</div>
         </div>
-        <footer class="footer">©2025. Versão teste 0.1.1 atualização n.3 - Atualizado em 01 de jul. de 2025 - Marcos Contabilidade LTDA. Desenvolvido por Arlan Arnor.</footer>
+        <footer class="footer">©2025. Versão teste 0.1.2 atualização n.4 - Atualizado em 02 de jul. de 2025 - Marcos Contabilidade LTDA. Desenvolvido por Arlan Arnor.</footer>
     </div>
     <script>
         let currentFilter = null;
@@ -657,7 +686,8 @@
                         if (filter === '0' && parts[2] === '0') {
                             // Filtro para Entradas (operação = 0)
                             data.push({
-                                nota: parts[8],
+                                numero: parts[8],        // número da nota
+                                chave: parts[9],         // chave de acesso (NOVO)
                                 total: parts[12],
                                 baseCalc: parts[21],
                                 icms: parts[22]
@@ -665,7 +695,8 @@
                         } else if (filter === '55' && parts[5] === '55') {
                             // Filtro para NF-e (modelo = 55), qualquer operação
                             data.push({
-                                nota: parts[8],
+                                numero: parts[8],        // número da nota
+                                chave: parts[9],         // chave de acesso (NOVO)
                                 total: parts[12],
                                 baseCalc: parts[21],
                                 icms: parts[22]
@@ -673,7 +704,8 @@
                         } else if (filter === '65' && parts[5] === '65') {
                             // Filtro para NFC-e (modelo = 65), qualquer operação
                             data.push({
-                                nota: parts[8],
+                                numero: parts[8],        // número da nota
+                                chave: parts[9],         // chave de acesso (NOVO)
                                 total: parts[12],
                                 baseCalc: parts[21],
                                 icms: parts[22],
@@ -682,7 +714,8 @@
                         }
                     }
                     
-                    data.sort((a, b) => a.nota.localeCompare(b.nota));
+                    // Ordenar por chave em vez de número da nota
+                    data.sort((a, b) => a.chave.localeCompare(b.chave));
                     resolve(data);
                 };
                 
@@ -834,31 +867,46 @@
             
             // Processar em lotes para evitar travamento com grande volume de dados
             const batchSize = 100;
-            const allNotes = new Set([
-                ...domainData.map(d => d.nota),
-                ...clientData.map(c => c.nota)
+            // MUDANÇA PRINCIPAL: usar chaves em vez de números de nota
+            const allKeys = new Set([
+                ...domainData.map(d => d.chave),
+                ...clientData.map(c => c.chave)
             ]);
             
             const differences = new Set();
-            const allNotesArray = Array.from(allNotes);
+            const allKeysArray = Array.from(allKeys);
             
-            // Função para processar um lote de notas
+            // Função para processar um lote de chaves
             function processBatch(startIndex) {
-                const endIndex = Math.min(startIndex + batchSize, allNotesArray.length);
+                const endIndex = Math.min(startIndex + batchSize, allKeysArray.length);
                 const fragment1 = document.createDocumentFragment();
                 const fragment2 = document.createDocumentFragment();
                 
                 for (let i = startIndex; i < endIndex; i++) {
-                    const nota = allNotesArray[i];
-                    const domainRow = domainData.find(d => d.nota === nota);
-                    const clientRow = clientData.find(c => c.nota === nota);
+                    const chave = allKeysArray[i];
+                    // MUDANÇA: buscar por chave em vez de número
+                    const domainRow = domainData.find(d => d.chave === chave);
+                    const clientRow = clientData.find(c => c.chave === chave);
                     let hasDifference = false;
                     
                     // Domain row
                     const dRow = document.createElement('tr');
                     if (domainRow) {
+                        // Célula da chave com ícone (PRIMEIRA COLUNA)
+                        let chaveCell = document.createElement('td');
+                        chaveCell.classList.add('chave-cell');
+                        chaveCell.dataset.chave = domainRow.chave;
+                        chaveCell.innerHTML = `
+                            <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
+                                 fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>`;
+                        dRow.appendChild(chaveCell);
+                        
+                        // Célula da nota (SEGUNDA COLUNA)
                         let cell = document.createElement('td');
-                        cell.textContent = domainRow.nota;
+                        cell.textContent = domainRow.numero;
                         dRow.appendChild(cell);
                         
                         cell = document.createElement('td');
@@ -873,9 +921,13 @@
                         cell.textContent = formatCurrency(domainRow.icms);
                         dRow.appendChild(cell);
                     } else {
-                        // Nota faltando no domínio
+                        // Chave faltando no domínio
                         let cell = document.createElement('td');
-                        cell.textContent = nota;
+                        cell.classList.add('missing', 'chave-cell');
+                        dRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = clientRow ? clientRow.numero : '';
                         cell.classList.add('missing');
                         dRow.appendChild(cell);
                         
@@ -890,8 +942,21 @@
                     // Client row
                     const cRow = document.createElement('tr');
                     if (clientRow) {
+                        // Célula da chave com ícone (PRIMEIRA COLUNA)
+                        let chaveCell = document.createElement('td');
+                        chaveCell.classList.add('chave-cell');
+                        chaveCell.dataset.chave = clientRow.chave;
+                        chaveCell.innerHTML = `
+                            <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
+                                 fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>`;
+                        cRow.appendChild(chaveCell);
+                        
+                        // Célula da nota (SEGUNDA COLUNA)
                         let cell = document.createElement('td');
-                        cell.textContent = clientRow.nota;
+                        cell.textContent = clientRow.numero;
                         cRow.appendChild(cell);
                         
                         cell = document.createElement('td');
@@ -906,9 +971,13 @@
                         cell.textContent = formatCurrency(clientRow.icms);
                         cRow.appendChild(cell);
                     } else {
-                        // Nota faltando no cliente
+                        // Chave faltando no cliente
                         let cell = document.createElement('td');
-                        cell.textContent = nota;
+                        cell.classList.add('missing', 'chave-cell');
+                        cRow.appendChild(cell);
+                        
+                        cell = document.createElement('td');
+                        cell.textContent = domainRow ? domainRow.numero : '';
                         cell.classList.add('missing');
                         cRow.appendChild(cell);
                         
@@ -930,8 +999,9 @@
                             if (normalizeNumber(domainValue) !== normalizeNumber(clientValue)) {
                                 const compareClass = getComparisonClass(domainValue, clientValue);
                                 
-                                dRow.cells[index + 1].classList.add(compareClass);
-                                cRow.cells[index + 1].classList.add(compareClass);
+                                // index + 2 porque agora a chave é a primeira coluna (índice 0) e nota é a segunda (índice 1)
+                                dRow.cells[index + 2].classList.add(compareClass);
+                                cRow.cells[index + 2].classList.add(compareClass);
                                 
                                 hasDifference = true;
                             }
@@ -939,6 +1009,8 @@
                     }
                     
                     if (hasDifference) {
+                        // Para diferenças, mostrar o número da nota (mais legível)
+                        const nota = domainRow ? domainRow.numero : clientRow.numero;
                         differences.add(nota);
                     }
                     
@@ -949,8 +1021,8 @@
                 domainTbody.appendChild(fragment1);
                 clientTbody.appendChild(fragment2);
                 
-                // Se houver mais notas para processar, agende o próximo lote
-                if (endIndex < allNotesArray.length) {
+                // Se houver mais chaves para processar, agende o próximo lote
+                if (endIndex < allKeysArray.length) {
                     setTimeout(() => processBatch(endIndex), 0);
                 } else {
                     // Todos os lotes foram processados, atualizar o resumo de diferenças
@@ -965,6 +1037,21 @@
             // Iniciar o processamento em lotes
             processBatch(0);
         }
+        
+        // Event listener global para cópia da chave
+        document.addEventListener('click', e => {
+            const icon = e.target.closest('.copy-icon');
+            if (!icon) return;
+            
+            const chave = icon.parentElement.dataset.chave;
+            if (!chave) return;
+            
+            navigator.clipboard.writeText(chave).then(() => {
+                showNotification('Chave copiada!', 'success');
+            }).catch(() => {
+                showNotification('Erro ao copiar a chave.', 'error');
+            });
+        });
         
         function filterDifferences(filterType = 'all') {
             const domainRows = document.querySelectorAll('#domainTable tbody tr');
@@ -1054,6 +1141,8 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            
+            showNotification('Arquivo exportado com sucesso!', 'success');
         }
         
         function tableToCSV(table) {
@@ -1061,7 +1150,13 @@
             return Array.from(rows)
                 .map(row => {
                     return Array.from(row.cells)
-                        .map(cell => `"${cell.textContent}"`)
+                        .map((cell, index) => {
+                            // Para a coluna da chave (agora índice 0), incluir o valor real da chave
+                            if (index === 0 && cell.dataset.chave) {
+                                return `"${cell.dataset.chave}"`;
+                            }
+                            return `"${cell.textContent}"`;
+                        })
                         .join(',');
                 })
                 .join('\n');
