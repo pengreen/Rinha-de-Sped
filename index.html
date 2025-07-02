@@ -557,7 +557,7 @@
             <div class="differences-title">NOTAS COM DIFERENÇAS</div>
             <div id="differences">Selecione os arquivos e execute uma análise para ver as diferenças</div>
         </div>
-        <footer class="footer">©2025. Versão teste 0.1 atualização n.2 - Atualizado em 01 de jul. de 2025 - Marcos Contabilidade LTDA. Desenvolvido por Arlan Arnor.</footer>
+        <footer class="footer">©2025. Versão teste 0.1.1 atualização n.3 - Atualizado em 01 de jul. de 2025 - Marcos Contabilidade LTDA. Desenvolvido por Arlan Arnor.</footer>
     </div>
     <script>
         let currentFilter = null;
@@ -658,7 +658,7 @@
                             // Filtro para Entradas (operação = 0)
                             data.push({
                                 nota: parts[8],
-                                total: parts[16],
+                                total: parts[12],
                                 baseCalc: parts[21],
                                 icms: parts[22]
                             });
@@ -666,7 +666,7 @@
                             // Filtro para NF-e (modelo = 55), qualquer operação
                             data.push({
                                 nota: parts[8],
-                                total: parts[16],
+                                total: parts[12],
                                 baseCalc: parts[21],
                                 icms: parts[22]
                             });
@@ -674,7 +674,7 @@
                             // Filtro para NFC-e (modelo = 65), qualquer operação
                             data.push({
                                 nota: parts[8],
-                                total: parts[16],
+                                total: parts[12],
                                 baseCalc: parts[21],
                                 icms: parts[22],
                                 serie: parts[7] // Extraindo a série (posição 7) para as NFC-e
